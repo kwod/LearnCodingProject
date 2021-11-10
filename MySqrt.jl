@@ -5,3 +5,4 @@ function mysqrt(x, N = 10)
     end
     return t
 end
+(mysqrt(3), √3)
