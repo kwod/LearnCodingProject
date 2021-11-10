@@ -24,8 +24,10 @@ IteratorSize(::Type{Collatz}) = SizeUnknown()
 
 collatz(n) = count(i -> true, Collatz(n))
 
-scatter(1:100_000, collatz, 
-    title = "Collatz Conjecture",
-    xlabel = "n", ylabel = "steps to reach one",
-    markerstrokewidth = 0, mc = :red, ms = 1,
-    legend = false)
+function plotCollatz(n)
+    scatter(1:n, collatz, 
+        title = "Collatz Conjecture",
+        xlabel = "n", ylabel = "steps to reach one",
+        markerstrokewidth = 0, ms = 1,
+        legend = false)
+end
