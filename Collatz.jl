@@ -7,12 +7,14 @@ struct Collatz n::Int end
 function iterate(c::Collatz, n = c.n)
     if isnothing(n)
         nothing
-    elseif isone(n)
-        (1, nothing)
-    elseif iseven(n)
-        (n, n÷2)
     else
-        (n, 3n+1)
+        (n, if isone(n)
+                nothing
+            elseif iseven(n)
+                n÷2
+            else
+                3n+1
+            end)
     end
 end
 
