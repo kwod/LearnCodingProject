@@ -1,7 +1,5 @@
 # This file is machine-generated - editing it directly is not advised
 
-<<<<<<< HEAD
-=======
 [[AbstractPlutoDingetjes]]
 deps = ["Pkg"]
 git-tree-sha1 = "0bc60e3006ad95b4bb7497698dd7c6d649b9bc06"
@@ -911,4 +909,3 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll", "Wayland_prot
 git-tree-sha1 = "ece2350174195bb31de1a63bea3a41ae1aa593b6"
 uuid = "d8fb68d0-12a3-5cfd-a85a-d49703b185fd"
 version = "0.9.1+5"
->>>>>>> 04ddc1c (first commit)
