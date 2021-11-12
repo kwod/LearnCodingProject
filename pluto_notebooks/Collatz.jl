@@ -1,10 +1,105 @@
-# This file is machine-generated - editing it directly is not advised
+### A Pluto.jl notebook ###
+# v0.17.1
 
-[[AbstractPlutoDingetjes]]
-deps = ["Pkg"]
-git-tree-sha1 = "0bc60e3006ad95b4bb7497698dd7c6d649b9bc06"
-uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.1.1"
+using Markdown
+using InteractiveUtils
+
+# ╔═╡ afc39e0e-8a66-45e3-bc19-10ce31b0037b
+begin
+	using Plots
+	using Base: SizeUnknown
+end
+
+# ╔═╡ 0a9a5061-da95-46b5-9567-1d8e3d3e8af0
+md"# Collatz Conjecture"
+
+# ╔═╡ 970a3dfc-83bd-4db9-a485-abf82c12ea73
+begin
+	
+	struct CollatzItr n::Int end
+	
+	import Base: iterate, eltype, IteratorSize
+	
+	function iterate(c::CollatzItr, n = c.n)
+		isnothing(n) ? nothing :
+		(n, isone(n) ? nothing :
+		iseven(n) ? n÷2 : 3n+1)
+	end
+		
+	eltype(::Type{CollatzItr}) = Int
+
+	IteratorSize(::Type{CollatzItr}) = SizeUnknown()
+
+	md"Collatz Sequence Iterator"
+end
+
+# ╔═╡ cf2f0fd1-deec-4305-b798-37a0cbbcabbc
+c27 = CollatzItr(27)
+
+# ╔═╡ 6a187ad4-a6f5-4de7-bab1-71f12edd133f
+collect(c27)
+
+# ╔═╡ 1fd31b98-6990-4b78-85ee-3e7aaa4dbb54
+collatz_steps_to_one(n) = count( i -> true, CollatzItr(n); init = -1)
+
+# ╔═╡ 4904da71-76d2-4a77-b260-775ff425af65
+collatz_zenit(n) = maximum(CollatzItr(n))
+
+# ╔═╡ dae769e9-d125-43c9-94fd-1d3b80b4094b
+
+
+# ╔═╡ ff2cc577-e9cc-45af-94bb-290b62c35a0b
+plot(1:1_000_000, collatz_zenit, seriestype = :sticks)
+
+# ╔═╡ 2a2eb7b2-4593-4b6d-a329-056cff01f575
+collatz_steps_to_one(1)
+
+# ╔═╡ 1eabfc30-7c41-444a-aa38-5f519cd0f5f6
+collatz_steps_to_one(2)
+
+# ╔═╡ c7043543-73fc-4089-a9f7-4c8e01d26e9c
+function plotcollatz(n)
+    scatter(1:n, collatz_steps_to_one, 
+        title = "Collatz Conjecture",
+        xlabel = "n", ylabel = "steps to reach one",
+        markerstrokewidth = 0, ms = 2,
+        legend = false)
+end
+
+# ╔═╡ ba60cbd0-60b1-4924-8866-0bb70ffaf2cf
+plotcollatz(10_000)
+
+# ╔═╡ 58154d6c-bfc1-496d-b4bc-c4121db4558d
+function histo(n, max_x)
+	bins = zeros(max_x)
+	addcount(z) = z ≤ max_x && (bins[z] += 1)
+	foreach(addcount, collatz_steps_to_one.(2:n))
+	bins
+end
+
+# ╔═╡ 01d77650-073c-4626-a307-4c451ddb7956
+function plothisto(n)
+	plot(histo(n, 450), seriestype = :sticks,
+		title = "Häufigkeiten der Folgenlängen bis 100 Millionen",
+        ylabel = "count", xlabel = "steps to reach one",
+        legend = false)
+end
+
+# ╔═╡ 71293a03-2700-4917-89a6-786a5ffa8712
+plothisto(100_000_000)
+
+# ╔═╡ 00000000-0000-0000-0000-000000000001
+PLUTO_PROJECT_TOML_CONTENTS = """
+[deps]
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+
+[compat]
+Plots = "~1.23.5"
+"""
+
+# ╔═╡ 00000000-0000-0000-0000-000000000002
+PLUTO_MANIFEST_TOML_CONTENTS = """
+# This file is machine-generated - editing it directly is not advised
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -73,12 +168,6 @@ version = "3.40.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 
-[[Configurations]]
-deps = ["ExproniconLite", "OrderedCollections", "TOML"]
-git-tree-sha1 = "79e812c535bb9780ba00f3acba526bde5652eb13"
-uuid = "5218b696-f38b-4ac9-8b61-a12ec717816d"
-version = "0.16.6"
-
 [[Contour]]
 deps = ["StaticArrays"]
 git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
@@ -135,11 +224,6 @@ git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.2.10+0"
 
-[[ExproniconLite]]
-git-tree-sha1 = "8b08cc88844e4d01db5a2405a08e9178e19e479e"
-uuid = "55351af7-c7e9-48d6-89ff-24e801d99491"
-version = "0.6.13"
-
 [[FFMPEG]]
 deps = ["FFMPEG_jll"]
 git-tree-sha1 = "b57e3acbe22f8484b4b5ff66a7499717fe1a9cc8"
@@ -151,9 +235,6 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
-
-[[FileWatching]]
-uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -184,12 +265,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
-
-[[FuzzyCompletions]]
-deps = ["REPL"]
-git-tree-sha1 = "2cc2791b324e8ed387a91d7226d17be754e9de61"
-uuid = "fb4132e2-a121-4a70-b8a1-d5b831dcdcc2"
-version = "0.4.3"
 
 [[GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -249,23 +324,6 @@ deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll",
 git-tree-sha1 = "8a954fed8ac097d5be04921d595f741115c1b2ad"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+0"
-
-[[Hyperscript]]
-deps = ["Test"]
-git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
-uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
-version = "0.0.4"
-
-[[HypertextLiteral]]
-git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
-uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.3"
-
-[[IOCapture]]
-deps = ["Logging", "Random"]
-git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
-uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.2"
 
 [[IniFile]]
 deps = ["Test"]
@@ -456,12 +514,6 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
-[[MsgPack]]
-deps = ["Serialization"]
-git-tree-sha1 = "a8cbf066b54d793b9a48c5daa5d586cf2b5bd43d"
-uuid = "99f44e22-a591-53d1-9472-aa23ef4bd671"
-version = "1.1.0"
-
 [[NaNMath]]
 git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
@@ -529,21 +581,9 @@ version = "1.0.15"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
-git-tree-sha1 = "0d185e8c33401084cab546a756b387b15f76720c"
+git-tree-sha1 = "7dc03c2b145168f5854085a16d054429d612b637"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.23.6"
-
-[[Pluto]]
-deps = ["Base64", "Configurations", "Dates", "Distributed", "FileWatching", "FuzzyCompletions", "HTTP", "InteractiveUtils", "Logging", "Markdown", "MsgPack", "Pkg", "REPL", "Sockets", "TableIOInterface", "Tables", "UUIDs"]
-git-tree-sha1 = "39da9dbed4931b85d65029ee78f75231cbfe20c4"
-uuid = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
-version = "0.17.1"
-
-[[PlutoUI]]
-deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "e071adf21e165ea0d904b595544a8e514c8bb42c"
-uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.19"
+version = "1.23.5"
 
 [[Preferences]]
 deps = ["TOML"]
@@ -656,11 +696,6 @@ version = "0.6.3"
 [[TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-
-[[TableIOInterface]]
-git-tree-sha1 = "9a0d3ab8afd14f33a35af7391491ff3104401a35"
-uuid = "d1efa939-5518-4425-949f-ab857e148477"
-version = "0.1.6"
 
 [[TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -909,3 +944,24 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll", "Wayland_prot
 git-tree-sha1 = "ece2350174195bb31de1a63bea3a41ae1aa593b6"
 uuid = "d8fb68d0-12a3-5cfd-a85a-d49703b185fd"
 version = "0.9.1+5"
+"""
+
+# ╔═╡ Cell order:
+# ╟─0a9a5061-da95-46b5-9567-1d8e3d3e8af0
+# ╠═970a3dfc-83bd-4db9-a485-abf82c12ea73
+# ╟─cf2f0fd1-deec-4305-b798-37a0cbbcabbc
+# ╠═6a187ad4-a6f5-4de7-bab1-71f12edd133f
+# ╠═1fd31b98-6990-4b78-85ee-3e7aaa4dbb54
+# ╠═4904da71-76d2-4a77-b260-775ff425af65
+# ╠═dae769e9-d125-43c9-94fd-1d3b80b4094b
+# ╠═ff2cc577-e9cc-45af-94bb-290b62c35a0b
+# ╠═2a2eb7b2-4593-4b6d-a329-056cff01f575
+# ╠═1eabfc30-7c41-444a-aa38-5f519cd0f5f6
+# ╠═c7043543-73fc-4089-a9f7-4c8e01d26e9c
+# ╠═ba60cbd0-60b1-4924-8866-0bb70ffaf2cf
+# ╠═71293a03-2700-4917-89a6-786a5ffa8712
+# ╠═58154d6c-bfc1-496d-b4bc-c4121db4558d
+# ╠═01d77650-073c-4626-a307-4c451ddb7956
+# ╟─afc39e0e-8a66-45e3-bc19-10ce31b0037b
+# ╟─00000000-0000-0000-0000-000000000001
+# ╟─00000000-0000-0000-0000-000000000002

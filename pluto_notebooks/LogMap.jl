@@ -4,65 +4,123 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ afc39e0e-8a66-45e3-bc19-10ce31b0037b
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
+# ╔═╡ 9f159d24-9b69-4604-b5e3-0b8c7f86821a
+using Plots, PlutoUI, LaTeXStrings, Base.Iterators, LinearAlgebra, FFTW
+
+# ╔═╡ 458036eb-0c33-4e2f-bc26-f7ec5e9e5a26
 begin
-	using Plots
-	using Base: SizeUnknown
+	logisticmap(r) = x -> r * x * (1 - x)
+	md"""### Logistic Map
+	Recurrence function: $x_{i+1}=r\times x_i\times(1-x_i)$"""
 end
 
-# ╔═╡ 0a9a5061-da95-46b5-9567-1d8e3d3e8af0
-md"# Collatz Conjecture"
-
-# ╔═╡ 970a3dfc-83bd-4db9-a485-abf82c12ea73
+# ╔═╡ 772106cb-86d1-4a53-8c2e-120d87800033
 begin
-	
-	struct CollatzItr n::Int end
-	
-	import Base: iterate, eltype, IteratorSize
-	
-	iterate(c::CollatzItr, n = c.n) =
-		isone(n) ? nothing : (n, iseven(n) ? n÷2 : 3n+1)
-	
-	eltype(::Type{CollatzItr}) = Int
-
-	IteratorSize(::Type{CollatzItr}) = SizeUnknown()
-
-	md"Collatz Sequence Iterator"
+	rsld = @bind r Slider(0.0:0.001:4.0, default = 3.5, show_value = true)
+	md"r = $(rsld)"
 end
 
-# ╔═╡ cf2f0fd1-deec-4305-b798-37a0cbbcabbc
-c25 = CollatzItr(25)
-
-# ╔═╡ 6a187ad4-a6f5-4de7-bab1-71f12edd133f
-collect(c25)
-
-# ╔═╡ 1fd31b98-6990-4b78-85ee-3e7aaa4dbb54
-collatz_steps_to_one(n) = count( i -> true, CollatzItr(n))
-
-# ╔═╡ c7043543-73fc-4089-a9f7-4c8e01d26e9c
-function plotcollatz(n)
-    scatter(1:n, collatz_steps_to_one, 
-        title = "Collatz Conjecture",
-        xlabel = "n", ylabel = "steps to reach one",
-        markerstrokewidth = 0, ms = 2,
-        legend = false)
+# ╔═╡ 20859934-d69d-46e0-a254-d485791cb31d
+function funplot(r, n = 9)
+	xs₀ = range(0.0, 1.0; length = 300)
+	xsi = copy(xs₀)
+	p = plot()
+	for i in 1:n
+		xsi = logisticmap(r).(xsi)
+		plot!(p, xs₀, xsi)
+	end
+	p
 end
 
-# ╔═╡ ba60cbd0-60b1-4924-8866-0bb70ffaf2cf
-plotcollatz(1_000)
+# ╔═╡ ee1c21b8-5249-4b95-913d-90d75f9baa41
+begin
+	struct LogMapIter r::Float64 end
+	Base.iterate(l::LogMapIter, x = .5) = x, logisticmap(l.r)(x)
+	Base.eltype(::Type{LogMapIter}) = Float64
+	Base.IteratorSize(::Type{LogMapIter}) = Base.IsInfinite()
+	logmap_seq(r, n; d = 0) = collect(take(drop(LogMapIter(r), d), n))
+end
+
+# ╔═╡ cacf6ccd-c9b9-43f2-9053-1e5cb2234293
+begin	
+	plm = plot(legend=false, xticks = 2.5:0.1:4.0, yticks = 0.0:0.1:1.0, ratio = 1,
+		xlabel="r", ylabel="xᵢ")
+	for r ∈ range(2.5, 4; length = 720)
+		xs, ys = fill(r, 150), logmap_seq(r, 150; d = 200)
+		scatter!(plm, xs, ys, c = :black, ms = 1, alpha = .5)
+	end
+	annotate!(plm, 2.6, .95, text("200 < i ≤ 350", 12, :left))
+end
+
+# ╔═╡ b6c3b414-a2a5-40a8-8a88-c494b66d0068
+begin
+	struct CobwebIter r::Float64 end
+	function Base.iterate(l::CobwebIter, (x, y) = (0.5, 0.5))
+		(x, y), (x==y) ? (x, logisticmap(l.r)(x)) : (y, y)
+	end
+	Base.eltype(::Type{CobwebIter}) = Tuple{Float64, Float64}
+	Base.IteratorSize(::Type{CobwebIter}) = Base.IsInfinite()
+	cobweb_points(r, n) = collect(take(CobwebIter(r), n))
+end
+
+# ╔═╡ c0c61623-6d8a-42a6-9bbb-da3853a5e554
+begin
+	l = @layout [a b; c d]
+
+	p1 = plot(logmap_seq(r,100))
+	
+	p2 = funplot(r)
+
+	p3 = plot(cobweb_points(r, 200), xlim = (0,1), ratio = 1)
+	plot!(p3, range(0.0, 1.0; length = 300), [identity, logisticmap(r)], c = :black)
+	
+	p4 = plot(abs.(FFTW.dct(logmap_seq(r, 800; d = 200))), line = (:sticks))
+
+	plot(p1, p2, p3, p4, layout = l, size = (600, 600), legend = false, ylim=(0,1),
+		title = ["Sequence xᵢ für r = $r" "x1 - x9" "Cobweb diagram" "FFT" ])
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
+FFTW = "~1.4.5"
+LaTeXStrings = "~1.3.0"
 Plots = "~1.23.5"
+PlutoUI = "~0.7.18"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractFFTs]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.0.1"
+
+[[AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "0ec322186e078db08ea3e7da5b8b2885c099b393"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.0"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -96,12 +154,6 @@ deps = ["Compat", "LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "f885e7e7c124f8c92650d61b9477b9ac2ee607dd"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 version = "1.11.1"
-
-[[ChangesOfVariables]]
-deps = ["LinearAlgebra", "Test"]
-git-tree-sha1 = "9a1d594397670492219635b35a3d830b04730d62"
-uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
-version = "0.1.1"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random"]
@@ -199,6 +251,18 @@ git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
 
+[[FFTW]]
+deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
+git-tree-sha1 = "463cb335fa22c4ebacfd1faba5fde14edb80d96c"
+uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+version = "1.4.5"
+
+[[FFTW_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
+uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
+version = "3.3.10+0"
+
 [[FixedPointNumbers]]
 deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
@@ -288,11 +352,34 @@ git-tree-sha1 = "8a954fed8ac097d5be04921d595f741115c1b2ad"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+0"
 
+[[Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[HypertextLiteral]]
+git-tree-sha1 = "5efcf53d798efede8fee5b2c8b09284be359bf24"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.2"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
+
 [[IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
+
+[[IntelOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
+uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
+version = "2018.0.3+2"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -300,9 +387,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[InverseFunctions]]
 deps = ["Test"]
-git-tree-sha1 = "a7254c0acd8e62f1ac75ad24d5db43f5f19f3c65"
+git-tree-sha1 = "f0c6489b12d28fb4c2103073ec7452f3423bd308"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
-version = "0.1.2"
+version = "0.1.1"
 
 [[IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
@@ -359,6 +446,10 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "a8f4f279b6fa3c3c4f1adadd78a621b13a506bce"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.9"
+
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -432,13 +523,19 @@ deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
-deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "be9eef9f9d78cecb6f262f3c10da151a6c5ab827"
+deps = ["ChainRulesCore", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
+git-tree-sha1 = "6193c3815f13ba1b78a51ce391db8be016ae9214"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.5"
+version = "0.3.4"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[MKL_jll]]
+deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
+uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
+version = "2021.1.1+2"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
@@ -547,6 +644,12 @@ deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers"
 git-tree-sha1 = "7dc03c2b145168f5854085a16d054429d612b637"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.23.5"
+
+[[PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "57312c7ecad39566319ccf5aa717a20788eb8c1f"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.18"
 
 [[Preferences]]
 deps = ["TOML"]
@@ -910,13 +1013,13 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─0a9a5061-da95-46b5-9567-1d8e3d3e8af0
-# ╟─970a3dfc-83bd-4db9-a485-abf82c12ea73
-# ╟─cf2f0fd1-deec-4305-b798-37a0cbbcabbc
-# ╟─6a187ad4-a6f5-4de7-bab1-71f12edd133f
-# ╟─1fd31b98-6990-4b78-85ee-3e7aaa4dbb54
-# ╟─c7043543-73fc-4089-a9f7-4c8e01d26e9c
-# ╟─ba60cbd0-60b1-4924-8866-0bb70ffaf2cf
-# ╟─afc39e0e-8a66-45e3-bc19-10ce31b0037b
+# ╠═458036eb-0c33-4e2f-bc26-f7ec5e9e5a26
+# ╠═ee1c21b8-5249-4b95-913d-90d75f9baa41
+# ╠═cacf6ccd-c9b9-43f2-9053-1e5cb2234293
+# ╟─772106cb-86d1-4a53-8c2e-120d87800033
+# ╠═c0c61623-6d8a-42a6-9bbb-da3853a5e554
+# ╠═20859934-d69d-46e0-a254-d485791cb31d
+# ╠═b6c3b414-a2a5-40a8-8a88-c494b66d0068
+# ╠═9f159d24-9b69-4604-b5e3-0b8c7f86821a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
