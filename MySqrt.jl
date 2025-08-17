@@ -18,6 +18,6 @@ end
 
 mysqrt(3)
 
-plot(range(0,50; length = 500),
+plot(range(0, 50; length = 500),
     [[x -> mysqrt(x, i) for i in 1:5]..., √],
     label = hcat(["Iteration $i" for i in 1:5]..., "√"))
